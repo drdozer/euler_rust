@@ -29,17 +29,26 @@ fn main() {
     });
 
     // dynamic programming - set [row][col] with max[row-1][col-1, col]
-    for r in 2 .. triangle_numbers.len() {
-        // let last_sum = &sums[r - 1];
-        // let mut this_sums: Vec<u64> = Vec::new();
-        // let this_tri = &triangle_numbers[r];
+    for r in 1 .. triangle_numbers.len() {
+        let prev_sums = &sums[r-1];
+        let current_tris = &triangle_numbers[r];
+        let mut new_row: Vec<u64> = Vec::new();
 
-        // for i in 0 .. last_sum.len() {
-        //     this_sums.push(
-        //         this_tri[i] +
-        //         last_sum[i].max(last_sum[i+1]));
-        // }
-        // this_sums.push(this_tri[])
-        // sums.push(this_sums);
+        new_row.push(prev_sums[0] + current_tris[0]);
+        for i in 1 .. prev_sums.len() {
+            new_row.push(
+                current_tris[i] +
+                prev_sums[i-1].max(prev_sums[i])
+                );
+        }
+        new_row.push(current_tris.last().unwrap() + prev_sums.last().unwrap());
+        
+        sums.push(new_row);
     }
+    let largest = sums.last().unwrap().iter().max().unwrap();
+
+    println!("Triangle:\n{:?}", triangle_numbers);
+    println!("Sums:\n{:?}", sums);
+    println!("Largest: {}", largest);
+    
 }
