@@ -3,7 +3,7 @@ use hypatia::prime_factors;
 
 fn main() {
     let mut all_factors: Vec<_> = (1..=20)
-        .flat_map(|i| prime_factors(i))
+        .flat_map(prime_factors)
         .collect::<Vec<_>>();
     all_factors.sort_by_key(|f| f.prime);
 

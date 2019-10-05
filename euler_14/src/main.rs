@@ -35,7 +35,11 @@ impl CollazGraph {
         }
     }
 
-    fn longest_chain<'a>(&'a self) -> (&'a u64, &'a u64) {
+    // fn longest_chain<'a>(&'a self) -> (&'a u64, &'a u64) {
+    //     self.graph.iter().max_by_key(|(_, v)| *v).unwrap()
+    // }
+
+    fn longest_chain(& self) -> (& u64, & u64) {
         self.graph.iter().max_by_key(|(_, v)| *v).unwrap()
     }
 }

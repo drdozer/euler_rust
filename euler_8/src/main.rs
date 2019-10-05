@@ -29,7 +29,7 @@ fn main() {
 
     let digits: Vec<_> = big_number.chars()
         .flat_map(|c| c.to_digit(10))
-        .map(|d| d as u64)
+        .map(u64::from)
         .collect();
 
     let ws: Vec<u64> = digits

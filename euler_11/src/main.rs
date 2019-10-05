@@ -1,6 +1,6 @@
 fn main() {
     let num_adjacent = 4usize;
-    let N = 20;
+    const N: usize = 20;
 
     let data_text = "
 08 02 22 97 38 15 00 40 00 75 04 05 07 78 52 12 50 77 91 08
@@ -35,10 +35,10 @@ fn main() {
     let mut prods: Vec<u64> = Vec::new();
 
     // horizontal
-    for r in 0 .. N {
+    for row in data_matrix.iter() {
         for c in 0 ..= N - num_adjacent {
             prods.push(
-                (0..=3).map(|i| data_matrix[r][c+i]).product());
+                (0..=3).map(|i| row[c+i]).product());
         }
     }
 

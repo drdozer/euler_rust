@@ -1,5 +1,4 @@
 use std::ops::{Add, Mul};
-use std::iter::{Sum};
 
 pub fn triangular(n: u64) -> u64 {
     ((n * n) + n) / 2
@@ -117,7 +116,7 @@ impl Decimal {
         }
     }
 
-    pub fn digits<'a>(&'a self) -> &'a [u8] {
+    pub fn digits(&self) -> &[u8] {
         &self.digits[..]
     } 
 }
@@ -128,6 +127,7 @@ impl std::fmt::Display for Decimal {
     }
 }
 
+#[allow(clippy::suspicious_arithmetic_impl)]
 impl Mul for &Decimal {
     type Output = Decimal;
 
@@ -138,11 +138,18 @@ impl Mul for &Decimal {
         // we should make a rectangular table, but it simplifies things later if it is square and padded with zeros
         let mut table = vec![vec![0u8; rhs.digits.len()]; self.digits.len()];
 
-        for i in 0 .. self.digits.len() {
-            for j in 0 .. rhs.digits.len() {
-                table[i][j] = self.digits[i]*rhs.digits[j];
+        // for i in 0 .. self.digits.len() {
+        //     for j in 0 .. rhs.digits.len() {
+        //         table[i][j] = self.digits[i]*rhs.digits[j];
+        //     }
+        // }
+        for (i, row) in table.iter_mut().enumerate() {
+            let d_i = self.digits[i];
+            for (j, cell) in row.iter_mut().enumerate() {
+                *cell = d_i*rhs.digits[j];
             }
         }
+
 
         // println!("table: {:?}", table);
 
@@ -154,7 +161,7 @@ impl Mul for &Decimal {
                 let k = i - j;
                 if k < self.digits.len() && j < rhs.digits.len() {
                     // println!("\t{} x {}", k, j);
-                    d_i += table[i-j][j] as u16;
+                    d_i += u16::from(table[i-j][j]);
                 }
             }
             diags.push(d_i);
@@ -162,8 +169,8 @@ impl Mul for &Decimal {
 
         let mut carry = 0u16;
         let mut digits: Vec<u8> = Vec::new();
-        for i in 0 .. l {
-            let s = diags[i] + carry;
+        for d in diags {
+            let s = d + carry;
             digits.push((s % 10) as u8);
             carry = s / 10;
         }
@@ -173,6 +180,7 @@ impl Mul for &Decimal {
     }
 }
 
+#[allow(clippy::suspicious_arithmetic_impl)]
 impl Add for &Decimal {
     type Output = Decimal;
 
@@ -185,10 +193,10 @@ impl Add for &Decimal {
         
         let mut carry = 0;
         for i in 0..l {
-            let a = if i < self.digits.len() { self.digits[i] } else { 0 };
-            let b = if i < rhs.digits.len()  { rhs.digits[i] } else { 0 };
+            let self_i = if i < self.digits.len() { self.digits[i] } else { 0 };
+            let rhs_i = if i < rhs.digits.len()  { rhs.digits[i] } else { 0 };
 
-            let s = a + b + carry;
+            let s = self_i + rhs_i + carry;
             let d = s % 10;
             carry = s / 10;
 
@@ -259,13 +267,14 @@ pub fn number_as_words(n: usize) -> String {
         words.push_str(" thousand");
     }
 
-    let mut needs_and = false;
-    if hundreds > 0 {
+    let mut needs_and = if hundreds > 0 {
         if !words.is_empty() { words.push(' '); }
         words.push_str(digit_names()[hundreds - 1]);
         words.push_str(" hundred");
-        needs_and = true;
-    }
+        true
+    } else {
+        false
+    };
 
     if teens < 20 && teens > 9 {
         if needs_and { words.push_str(" and"); }

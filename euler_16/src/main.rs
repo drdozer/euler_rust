@@ -10,6 +10,6 @@ fn main() {
     }
 
     println!("2^{} = {}", expo, pow);
-    let s: u64 = pow.digits().iter().map(|d| *d as u64).sum();
+    let s: u64 = pow.digits().iter().map(|&d| u64::from(d)).sum();
     println!("Digit sum: {}", s);
 }
