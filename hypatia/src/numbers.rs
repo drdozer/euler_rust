@@ -78,12 +78,25 @@ pub fn prime_factors(n: u64) -> impl Iterator<Item = Factor> {
     })
 }
 
-use std::rc::Rc;
-use std::sync::RwLock;
-use std::iter::{IntoIterator};
+use std::cell::RefCell;
+// use std::ops::DerefMut;
+// use std::ops::Deref;
 
 pub struct Primes {
-    ps: Rc<RwLock<Vec<u64>>>,
+    ps: RefCell<Vec<u64>>,
+}
+
+impl Primes {
+    fn iter<'a>(&'a self) -> impl Iterator<Item=u64> + 'a {
+        let existing = self.ps.borrow().iter().map(|&p| p);
+        let mut extending = {
+            let mut ps = self.ps.borrow_mut();
+            let i = ps.iter().last().unwrap() + 1;
+            PrimeExtention { ps: &ps, i }
+        };
+
+        existing.chain(extending)
+    }
 }
 
 impl Default for Primes {
@@ -91,94 +104,40 @@ impl Default for Primes {
         let mut ps = Vec::new();
         ps.push(2);
         Primes {
-            ps: Rc::new(RwLock::new(ps))
+            ps: RefCell::new(ps)
         }
     }
 }
 
-/*
-impl <'a> IntoIterator for &'a mut Primes {
-    type Item = u64;
 
-    type IntoIter = Box<dyn Iterator<Item = u64> + 'a>;
-    
-    fn into_iter(self) -> Self::IntoIter {
-
-        let exist_iter = {
-            let ps = self.ps.read().unwrap();
-            ps.iter().map(|&p| p)
-        };
-
-        let extend_iter = {
-            let mut ps = self.ps.write().unwrap();
-            let last = ps.last().unwrap();
-            let mut i = last + 1;
-            std::iter::from_fn(move || {
-                // really important for performance to only search up to (inclusive)
-                // the square root of the number to be tested
-                let i_root = (i as f64).sqrt().ceil() as u64;
-                loop {
-                    if ps.iter()
-                        .take_while(|p| **p <= i_root)
-                        .any(|p| i % *p == 0)
-                    {
-                        i += 1;
-                        continue;
-                    } else {
-                        let p = i;
-                        i += 1;
-                        ps.push(p);
-                        return Some(p);
-                    }
-                }
-            })
-        };
-
-        let it: Box<dyn Iterator<Item = u64>> = Box::new(
-            exist_iter.chain(extend_iter));
-        it
-    }
-}
-*/
-
-impl <'a> IntoIterator for &'a mut Primes {
-    type Item = u64;
-    type IntoIter = PrimesIter<'a>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        let existing_ps = self.ps.clone();
-        PrimesIter{
-            ps: existing_ps,
-            state: PrimesIterState::FromExisting(&existing_ps.read().unwrap().iter()),
-        }
-    }
+pub struct PrimeExtention<'a> {
+    ps: &'a Vec<u64>,
+    i: u64,
 }
 
-pub struct PrimesIter<'a> {
-    ps: Rc<RwLock<Vec<u64>>>,
-    state: PrimesIterState<'a>
-}
-
-enum PrimesIterState<'a> {
-    FromExisting(&'a std::slice::Iter<'a, u64>),
-    FromExtention()
-}
-
-impl <'a> Iterator for PrimesIter<'a> {
+impl Iterator for PrimeExtention<'_> {
     type Item = u64;
 
     fn next(&mut self) -> Option<u64> {
-        match self.state {
-            PrimesIterState::FromExisting(i) => match i.next() {
-                Some(&n) => Some(n),
-                None => {
-                    self.state = PrimesIterState::FromExtention();
-                    self.next() // chain
-                }
+        let i_root = (self.i as f64).sqrt().ceil() as u64;
+        loop {
+            if self.ps.iter()
+                .take_while(|p| **p <= i_root)
+                .any(|p| self.i % *p == 0)
+            {
+                self.i += 1;
+                continue;
+            } else {
+                let p = self.i;
+                self.i += 1;
+                self.ps.push(p);
+                return Some(p);
             }
         }
     }
 }
+
+
 
 
 
