@@ -1,4 +1,4 @@
-use hypatia::{prime_factors, Factor};
+use hypatia::numbers::{prime_factors, Factor};
 
 fn main() {
     let num = 600_851_475_143u64;

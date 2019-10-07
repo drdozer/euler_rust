@@ -1,4 +1,4 @@
-use hypatia::triangular;
+use hypatia::numbers::triangular;
 
 fn main() {
     // multiples of 3 and 5 under 1000

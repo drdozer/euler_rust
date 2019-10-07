@@ -1,4 +1,4 @@
-use hypatia::triangular;
+use hypatia::numbers::triangular;
 
 fn main() {
     let num = 100;

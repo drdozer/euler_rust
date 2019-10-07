@@ -1,4 +1,4 @@
-use hypatia::fib;
+use hypatia::numbers::fib;
 
 fn main() {
     let even_sum: u64 = 

@@ -1,4 +1,4 @@
-use hypatia::Decimal;
+use hypatia::decimal::Decimal;
 
 fn main() {
     let numbers_text = "

@@ -1,4 +1,4 @@
-use hypatia::number_as_words;
+use hypatia::number_words::number_as_words;
 
 // This solves the problem by brute force.
 // A more elegant way is to factor it out e.g. 1..9, 10..19, 20..99, 100, and so on.

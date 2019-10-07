@@ -1,5 +1,5 @@
 use itertools::Itertools;
-use hypatia::prime_factors;
+use hypatia::numbers::prime_factors;
 
 fn main() {
     let mut all_factors: Vec<_> = (1..=20)

@@ -1,4 +1,4 @@
-use hypatia::Decimal;
+use hypatia::decimal::Decimal;
 
 fn main() {
     let d_2 = Decimal::from_u32(2);

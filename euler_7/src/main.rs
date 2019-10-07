@@ -1,4 +1,4 @@
-use hypatia::primes;
+use hypatia::numbers::primes;
 
 
 fn main() {

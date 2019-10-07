@@ -1,4 +1,4 @@
-use hypatia::primes;
+use hypatia::numbers::primes;
 
 fn main() {
     let limit = 2_000_000u64;

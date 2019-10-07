@@ -1,4 +1,4 @@
-use hypatia::{triangular, prime_factors};
+use hypatia::numbers::{triangular, prime_factors};
 
 // The number of factors a number has is related to its prime factors.
 // For each primer factor (prime, power), you can chose from 0 to power (inclusive)

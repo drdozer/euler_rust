@@ -1,4 +1,4 @@
-use hypatia::is_palendrome;
+use hypatia::numbers::is_palendrome;
 
 fn main() {
     let largest = (100..999)
