@@ -78,32 +78,13 @@ pub fn prime_factors(n: u64) -> impl Iterator<Item = Factor> {
     })
 }
 
-use std::cell::{
-    Ref,
-    RefCell
-};
-// use std::ops::DerefMut;
-// use std::ops::Deref;
 
-pub struct Primes {
-    ps: RefCell<Vec<u64>>,
-}
+
+pub struct Primes(Vec<u64>);
 
 impl Primes {
-    fn iter<'a>(&'a self) -> impl Iterator<Item=u64> + 'a {
-        let (re, it) = self.iter_existing();
-        PrimesIterator::IterateOverExisting(&self, re, it)
-    }
-
-    fn iter_existing<'a>(&'a self) -> (Ref<'a, Vec<u64>>, impl Iterator<Item=u64> + 'a) {
-        let ps = self.ps.borrow();
-        (ps, ps.iter().map(|&p| p))
-    }
-
-    fn iter_extending<'a>(&'a self) -> PrimeExtention<'a> {
-        let ps = self.ps.borrow_mut();
-        let i = ps.iter().last().unwrap() + 1;
-        PrimeExtention { ps: &ps, i }
+    fn iter<'a>(&'a mut self) -> PrimesIterator<'a> {
+        PrimesIterator::IterateOverExisting(&mut self.0, 0)
     }
 }
 
@@ -111,64 +92,49 @@ impl Default for Primes {
     fn default() -> Self {
         let mut ps = Vec::new();
         ps.push(2);
-        Primes {
-            ps: RefCell::new(ps)
-        }
+        Primes(ps)
     }
 }
 
-pub enum PrimesIterator<'a, I> {
-    IterateOverExisting(&'a Primes, Ref<'a, Vec<u64>>, I),
-    IterateOverExtending(PrimeExtention<'a>),
+pub enum PrimesIterator<'a> {
+    IterateOverExisting(&'a mut Vec<u64>, usize),
+    IterateOverExtending(&'a mut Vec<u64>, u64),
 }
-use PrimesIterator::*;
 
-impl <'a, I> Iterator for PrimesIterator<'a, I>
-where I: Iterator<Item=u64> {
+impl <'a> Iterator for PrimesIterator<'a> {
     type Item=u64;
 
-  fn next(&mut self) -> Option<u64> {
-      match self {
-          IterateOverExisting(ps, _, i) => match i.next() {
-              None => {
-                  *self = IterateOverExtending(ps.iter_extending());
-                  self.next()
-              }
-              n => n
-          }
-          IterateOverExtending(i) => i.next()
-      }
-  }
-}
-
-pub struct PrimeExtention<'a> {
-    ps: &'a Vec<u64>,
-    i: u64,
-}
-
-impl Iterator for PrimeExtention<'_> {
-    type Item = u64;
-
     fn next(&mut self) -> Option<u64> {
-        let i_root = (self.i as f64).sqrt().ceil() as u64;
-        loop {
-            if self.ps.iter()
-                .take_while(|p| **p <= i_root)
-                .any(|p| self.i % *p == 0)
-            {
-                self.i += 1;
-                continue;
+        match *self {
+            PrimesIterator::IterateOverExisting(ref mut ps, ref mut i) => if *i < ps.len() {
+                let p = ps[*i];
+                *i+=1;
+                Some(p)
             } else {
-                let p = self.i;
-                self.i += 1;
-                self.ps.push(p);
-                return Some(p);
+                let pi = ps[*i-1] + 1;
+                *self = PrimesIterator::IterateOverExtending(ps, pi);
+                self.next()
+            }
+            PrimesIterator::IterateOverExtending(ref mut ps, ref mut pi) => {
+                let mut i = *pi;
+                let i_root = (i as f64).sqrt().ceil() as u64;
+                loop {
+                    if ps.iter()
+                        .take_while(|&&p| p <= i_root)
+                        .any(|&p| i % p == 0)
+                    {
+                        i += 1;
+                        continue;
+                    } else {
+                        *pi = i+1;
+                        ps.push(i);
+                        break Some(i);
+                    }
+                }
             }
         }
     }
 }
-
-
 
 
 
