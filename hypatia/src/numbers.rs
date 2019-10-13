@@ -15,39 +15,10 @@ pub fn fib() -> impl Iterator<Item = u64> {
     })
 }
 
-pub fn primes() -> impl Iterator<Item = u64> {
-    let mut ps = Vec::new();
-    let mut i = 2u64;
-
-    std::iter::from_fn(move || {
-        // really important for performance to only search up to (inclusive)
-        // the square root of the number to be tested
-        let i_root = (i as f64).sqrt().ceil() as u64;
-        loop {
-            if ps.iter()
-                .take_while(|p| **p <= i_root)
-                .any(|p| i % *p == 0)
-            {
-                i += 1;
-                continue;
-            } else {
-                let p = i;
-                i += 1;
-                ps.push(p);
-                return Some(p);
-            }
-        }
-    })
-}
-
 #[derive(Debug)]
 pub struct Factor {
     pub prime: u64,
     pub power: u32,
-}
-
-pub fn factors(n: u64) -> impl Iterator<Item = u64> {
-    (1..n).filter(move |i| n % *i == 0)
 }
 
 impl Factor {
@@ -56,35 +27,35 @@ impl Factor {
     }
 }
 
-pub fn prime_factors(n: u64) -> impl Iterator<Item = Factor> {
-    let mut n = n;
-    let mut ps = primes();
-    std::iter::from_fn(move || {
-        loop {
-            let pr = ps.next().unwrap();
-            if pr > n { return None }
-            let mut po = 0;
-            loop {
-                if n % pr != 0 {
-                    break;
-                }
-                po += 1;
-                n /= pr;
-            }
-            if po > 0 {
-                return Some(Factor{ prime: pr, power: po })
-            }
-        }
-    })
-}
-
-
 
 pub struct Primes(Vec<u64>);
 
 impl Primes {
     pub fn iter<'a>(&'a mut self) -> PrimesIterator<'a> {
         PrimesIterator { ps: &mut self.0, state: PIState::I(0) }
+    }
+
+    pub fn factorise<'a>(&'a mut self, n: u64) -> Vec<Factor> {
+        let mut n = n;
+        let mut ps = self.iter();
+    
+        std::iter::from_fn(move || {
+            loop {
+                let pr = ps.next().unwrap();
+                if pr > n { return None }
+                let mut po = 0;
+                loop {
+                    if n % pr != 0 {
+                        break;
+                    }
+                    po += 1;
+                    n /= pr;
+                }
+                if po > 0 {
+                    return Some(Factor{ prime: pr, power: po })
+                }
+            }
+        }).collect()
     }
 }
 

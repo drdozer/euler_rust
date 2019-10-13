@@ -1,9 +1,11 @@
 use itertools::Itertools;
-use hypatia::numbers::prime_factors;
+use hypatia::numbers::Primes;
 
 fn main() {
+    let mut primes = Primes::default();
+
     let mut all_factors: Vec<_> = (1..=20)
-        .flat_map(prime_factors)
+        .flat_map(|n| primes.factorise(n))
         .collect::<Vec<_>>();
     all_factors.sort_by_key(|f| f.prime);
 

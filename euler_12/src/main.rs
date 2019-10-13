@@ -1,4 +1,4 @@
-use hypatia::numbers::{triangular, prime_factors};
+use hypatia::numbers::{triangular, Primes};
 
 // The number of factors a number has is related to its prime factors.
 // For each primer factor (prime, power), you can chose from 0 to power (inclusive)
@@ -24,10 +24,11 @@ use hypatia::numbers::{triangular, prime_factors};
 fn main() {
     let min_count = 500;
     let mut i = 1u64;
+    let mut ps = Primes::default();
     loop {
         let tri_i = triangular(i);
-        let fs = prime_factors(tri_i);
-        let factor_count = fs.map(|f| f.power + 1).product::<u32>();
+        let fs = ps.factorise(tri_i);
+        let factor_count = fs.iter().map(|f| f.power + 1).product::<u32>();
   
         if factor_count > 500 {
             println!("First triangular number with over {} factors is: {}", min_count, tri_i);
