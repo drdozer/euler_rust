@@ -28,7 +28,7 @@ fn main() {
     loop {
         let tri_i = triangular(i);
         let fs = ps.factorise(tri_i);
-        let factor_count = fs.iter().map(|f| f.power + 1).product::<u32>();
+        let factor_count = fs.count_factors();
   
         if factor_count > 500 {
             println!("First triangular number with over {} factors is: {}", min_count, tri_i);

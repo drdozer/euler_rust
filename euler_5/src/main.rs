@@ -5,8 +5,8 @@ fn main() {
     let mut primes = Primes::default();
 
     let mut all_factors: Vec<_> = (1..=20)
-        .flat_map(|n| primes.factorise(n))
-        .collect::<Vec<_>>();
+        .flat_map(|n| primes.factorise(n).vec())
+        .collect();
     all_factors.sort_by_key(|f| f.prime);
 
     let grouped: Vec<_> = all_factors.iter()

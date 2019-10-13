@@ -29,6 +29,42 @@ pub fn fib() -> impl Iterator<Item = u64> {
 // }
 
 #[derive(Debug)]
+pub struct Factors(Vec<Factor>);
+
+impl Factors {
+    pub fn vec_ref(&self) -> &Vec<Factor> {
+        &self.0
+    }
+
+    pub fn vec(self) -> Vec<Factor> {
+        self.0
+    }
+
+    // The count of factors can be calulated efficiently from the prime powers.
+    // For each prime in the prime factors with a power of p, it can contribute p+1 modulo families of factors.
+    // Therefore, the total number of factors a number has is the product of p+1 for each prime factor power.
+    pub fn count_factors(&self) -> u32 {
+        self.0.iter().map(|f| f.power + 1).product::<u32>()
+    }
+
+    // The sum of all factors can be calculated efficiently from the primes and their powers.
+    //
+    // The factors can be found by exhaustively looping over each power of each prime as a big series of nested loops.
+    // In the inner-most loop, take the product of all the contributions of the primes.
+    // Then sum over each of these loops.
+    //
+    // This is expensive!
+    //
+    // Alternatively, take advantage of distribution laws.
+    // Given the sum of the powers of a single prime factor (e.g. `7,2` becomes `7^0+7^1+7^2`), take the product of these.
+    // This works because `a0*b0 + a0*b1 + a1*b0 + a1*b1 + ... = (a0 + a1 + ...) * (b0 + b1 + ...)`.
+    // so we reduce the number of sums from polynomial to linear over the factors.
+    pub fn sum_factors(&self) -> u64 {
+        self.0.iter().map(Factor::power_sum).product()
+    }
+}
+
+#[derive(Clone, Copy, Debug)]
 pub struct Factor {
     pub prime: u64,
     pub power: u32,
@@ -37,6 +73,19 @@ pub struct Factor {
 impl Factor {
     pub fn calculate(&self) -> u64 {
         self.prime.pow(self.power)
+    }
+
+    // The sum of all powers of a prime, from 0.
+    //
+    // This could be calcualted by looping and summing. However, this is the geometric sum `n^0 + n^1 + .. + n^p = (n^(p+1)-1)/(p-1)` which doesn't require looping.
+    pub fn power_sum(&self) -> u64 {
+        let po = self.power;
+        let pr = self.prime;
+
+        let num = pr.pow(po+1) - 1;
+        let den = pr - 1;
+
+        num / den
     }
 }
 
@@ -48,27 +97,29 @@ impl Primes {
         PrimesIterator { ps: &mut self.0, state: PIState::I(0) }
     }
 
-    pub fn factorise<'a>(&'a mut self, n: u64) -> Vec<Factor> {
+    pub fn factorise<'a>(&'a mut self, n: u64) -> Factors {
         let mut n = n;
         let mut ps = self.iter();
     
-        std::iter::from_fn(move || {
-            loop {
-                let pr = ps.next().unwrap();
-                if pr > n { return None }
-                let mut po = 0;
+        Factors(
+            std::iter::from_fn(move || {
                 loop {
-                    if n % pr != 0 {
-                        break;
+                    let pr = ps.next().unwrap();
+                    if pr > n { return None }
+                    let mut po = 0;
+                    loop {
+                        if n % pr != 0 {
+                            break;
+                        }
+                        po += 1;
+                        n /= pr;
                     }
-                    po += 1;
-                    n /= pr;
+                    if po > 0 {
+                        return Some(Factor{ prime: pr, power: po })
+                    }
                 }
-                if po > 0 {
-                    return Some(Factor{ prime: pr, power: po })
-                }
-            }
-        }).collect()
+            }).collect()
+        )
     }
 }
 
