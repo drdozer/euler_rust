@@ -15,6 +15,19 @@ pub fn fib() -> impl Iterator<Item = u64> {
     })
 }
 
+// pub fn factorial<N>() -> impl Iterator<Item = u128> {
+//     let mut f = 1;
+//     let mut i = 0;
+
+//     std::iter::from_fn(move || {
+//         println!("factorial at {}, {}", i, f);
+//         let f0 = f;
+//         i +=1;
+//         f *= i;
+//         Some(f0)
+//     })
+// }
+
 #[derive(Debug)]
 pub struct Factor {
     pub prime: u64,
