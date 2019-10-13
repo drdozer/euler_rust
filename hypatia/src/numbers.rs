@@ -83,8 +83,8 @@ pub fn prime_factors(n: u64) -> impl Iterator<Item = Factor> {
 pub struct Primes(Vec<u64>);
 
 impl Primes {
-    fn iter<'a>(&'a mut self) -> PrimesIterator<'a> {
-        PrimesIterator::IterateOverExisting(&mut self.0, 0)
+    pub fn iter<'a>(&'a mut self) -> PrimesIterator<'a> {
+        PrimesIterator { ps: &mut self.0, state: PIState::I(0) }
     }
 }
 
@@ -96,30 +96,36 @@ impl Default for Primes {
     }
 }
 
-pub enum PrimesIterator<'a> {
-    IterateOverExisting(&'a mut Vec<u64>, usize),
-    IterateOverExtending(&'a mut Vec<u64>, u64),
+pub struct PrimesIterator<'a> {
+    ps: &'a mut Vec<u64>,
+    state: PIState,
+}
+
+enum PIState {
+    I(usize),
+    P(u64)
 }
 
 impl <'a> Iterator for PrimesIterator<'a> {
     type Item=u64;
 
     fn next(&mut self) -> Option<u64> {
-        match *self {
-            PrimesIterator::IterateOverExisting(ref mut ps, ref mut i) => if *i < ps.len() {
-                let p = ps[*i];
+        match self.state {
+            PIState::I(ref mut i) if *i < self.ps.len() => {
+                let p = self.ps[*i];
                 *i+=1;
                 Some(p)
-            } else {
-                let pi = ps[*i-1] + 1;
-                *self = PrimesIterator::IterateOverExtending(ps, pi);
+            }
+            PIState::I(_) => {
+                let pi = self.ps[self.ps.len()-1] + 1;
+                self.state = PIState::P(pi);
                 self.next()
             }
-            PrimesIterator::IterateOverExtending(ref mut ps, ref mut pi) => {
+            PIState::P(ref mut pi) => {
                 let mut i = *pi;
                 let i_root = (i as f64).sqrt().ceil() as u64;
                 loop {
-                    if ps.iter()
+                    if self.ps.iter()
                         .take_while(|&&p| p <= i_root)
                         .any(|&p| i % p == 0)
                     {
@@ -127,7 +133,7 @@ impl <'a> Iterator for PrimesIterator<'a> {
                         continue;
                     } else {
                         *pi = i+1;
-                        ps.push(i);
+                        self.ps.push(i);
                         break Some(i);
                     }
                 }
