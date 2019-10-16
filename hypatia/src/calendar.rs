@@ -3,7 +3,7 @@ pub struct Year(u16);
 
 #[derive(Clone, Copy)]
 pub struct Month(u8);   // 0=January .. 11=December
-struct Day(u8);     // 0=Sunday .. 6=Saturday
+pub struct Day(u8);     // 0=Sunday .. 6=Saturday
 
 pub const MONTHS: u8 = 12;
 pub const DAYS: u8 = 7;
