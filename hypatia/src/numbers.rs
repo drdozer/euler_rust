@@ -1,3 +1,4 @@
+use std::cmp::Ordering;
 
 pub fn triangular(n: u64) -> u64 {
     ((n * n) + n) / 2
@@ -29,27 +30,30 @@ pub fn fib() -> impl Iterator<Item = u64> {
 // }
 
 #[derive(Debug)]
-pub struct Factors(Vec<Factor>);
+pub struct Factors {
+    n: u64,
+    vec: Vec<Factor>
+}
 
 impl Factors {
     pub fn vec_ref(&self) -> &Vec<Factor> {
-        &self.0
+        &self.vec
     }
 
     pub fn vec(self) -> Vec<Factor> {
-        self.0
+        self.vec
     }
 
-    // The count of factors can be calulated efficiently from the prime powers.
-    // For each prime in the prime factors with a power of p, it can contribute p+1 modulo families of factors.
-    // Therefore, the total number of factors a number has is the product of p+1 for each prime factor power.
-    pub fn count_factors(&self) -> u32 {
-        self.0.iter().map(|f| f.power + 1).product::<u32>()
+    // The count of divisors can be calulated efficiently from the prime powers.
+    // For each prime in the prime factors with a power of p, it can contribute p+1 modulo families of divisors.
+    // Therefore, the total number of divisors a number has is the product of p+1 for each prime factor power.
+    pub fn count_divisors(&self) -> u32 {
+        self.vec.iter().map(|f| f.power + 1).product::<u32>()
     }
 
-    // The sum of all factors can be calculated efficiently from the primes and their powers.
+    // The sum of all divisors can be calculated efficiently from the primes and their powers.
     //
-    // The factors can be found by exhaustively looping over each power of each prime as a big series of nested loops.
+    // The divisors can be found by exhaustively looping over each power of each prime as a big series of nested loops.
     // In the inner-most loop, take the product of all the contributions of the primes.
     // Then sum over each of these loops.
     //
@@ -59,9 +63,31 @@ impl Factors {
     // Given the sum of the powers of a single prime factor (e.g. `7,2` becomes `7^0+7^1+7^2`), take the product of these.
     // This works because `a0*b0 + a0*b1 + a1*b0 + a1*b1 + ... = (a0 + a1 + ...) * (b0 + b1 + ...)`.
     // so we reduce the number of sums from polynomial to linear over the factors.
-    pub fn sum_factors(&self) -> u64 {
-        self.0.iter().map(Factor::power_sum).product()
+    //
+    // We an further optimize this, since the sum of powers is a geometric sum, hence we can solve it analytically without looping.
+    pub fn sum_divisors(&self) -> u64 {
+        self.vec.iter().map(Factor::power_sum).product()
     }
+
+    // The proper divisors exclude thenumber itself.
+    pub fn sum_proper_divisors(&self) -> u64 {
+        self.sum_divisors() - self.n
+    }
+
+    // Check if the number is perfect or not.
+    pub fn is_perfect_number(&self) -> Perfection {
+        match self.sum_proper_divisors().cmp(&self.n) {
+            Ordering::Less => Perfection::Deficient,
+            Ordering::Equal => Perfection::Perfect,
+            Ordering::Greater => Perfection::Abundant,
+        }
+    }
+}
+
+pub enum Perfection {
+    Deficient,
+    Perfect,
+    Abundant,
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -98,28 +124,29 @@ impl Primes {
     }
 
     pub fn factorise<'a>(&'a mut self, n: u64) -> Factors {
-        let mut n = n;
+        let mut m = n;
         let mut ps = self.iter();
     
-        Factors(
-            std::iter::from_fn(move || {
+        Factors {
+            n,
+            vec: std::iter::from_fn(move || {
                 loop {
                     let pr = ps.next().unwrap();
-                    if pr > n { return None }
+                    if pr > m { return None }
                     let mut po = 0;
                     loop {
-                        if n % pr != 0 {
+                        if m % pr != 0 {
                             break;
                         }
                         po += 1;
-                        n /= pr;
+                        m /= pr;
                     }
                     if po > 0 {
                         return Some(Factor{ prime: pr, power: po })
                     }
                 }
             }).collect()
-        )
+        }
     }
 }
 

@@ -7,13 +7,13 @@ fn main() {
 
     for i in 2..10_000 {
         let factors_of_i = primes.factorise(i);
-        let sum_of_divisors = factors_of_i.sum_factors() - i;
+        let proper_divisors_sum = factors_of_i.sum_proper_divisors();
 
         // skip self-amicables
-        if sum_of_divisors == i { continue; }
+        if proper_divisors_sum == i { continue; }
 
-        let factors_of_s = primes.factorise(sum_of_divisors);
-        let sod_s = factors_of_s.sum_factors() - sum_of_divisors;
+        let factors_of_s = primes.factorise(proper_divisors_sum);
+        let sod_s = factors_of_s.sum_proper_divisors();
 
         // not sure how to compute only half of each, so let's just add i
         if sod_s == i  { sum_amicables += i }
