@@ -44,6 +44,8 @@ impl Factors {
         self.vec
     }
 
+    pub fn n(&self) -> u64 { self.n }
+
     // The count of divisors can be calulated efficiently from the prime powers.
     // For each prime in the prime factors with a power of p, it can contribute p+1 modulo families of divisors.
     // Therefore, the total number of divisors a number has is the product of p+1 for each prime factor power.
@@ -75,7 +77,7 @@ impl Factors {
     }
 
     // Check if the number is perfect or not.
-    pub fn is_perfect_number(&self) -> Perfection {
+    pub fn perfection(&self) -> Perfection {
         match self.sum_proper_divisors().cmp(&self.n) {
             Ordering::Less => Perfection::Deficient,
             Ordering::Equal => Perfection::Perfect,
@@ -84,6 +86,7 @@ impl Factors {
     }
 }
 
+#[derive(PartialEq)]
 pub enum Perfection {
     Deficient,
     Perfect,
