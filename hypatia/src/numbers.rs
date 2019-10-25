@@ -30,27 +30,51 @@ pub fn fib() -> impl Iterator<Item = u64> {
 // }
 
 #[derive(Debug)]
-pub struct Factors {
-    n: u64,
-    vec: Vec<Factor>
+pub struct Factorisation {
+    pub n: u64,
+    pub factors: Factors
 }
 
+impl Factorisation {
+
+    // The proper divisors exclude the number itself.
+    pub fn sum_proper_divisors(&self) -> u64 {
+        self.factors.sum_divisors() - self.n
+    }
+
+    // Check if the number is perfect or not.
+    pub fn perfection(&self) -> Perfection {
+        match self.sum_proper_divisors().cmp(&self.n) {
+            Ordering::Less => Perfection::Deficient,
+            Ordering::Equal => Perfection::Perfect,
+            Ordering::Greater => Perfection::Abundant,
+        }
+    }
+
+}
+
+#[derive(Debug)]
+pub struct Factors(Vec<Factor>);
+
 impl Factors {
-    pub fn vec_ref(&self) -> &Vec<Factor> {
-        &self.vec
-    }
+    pub fn iter(&self) -> std::slice::Iter<'_, Factor> { self.0.iter() }
 
-    pub fn vec(self) -> Vec<Factor> {
-        self.vec
+    // Convert this factors into the equivalent factorisation.
+    //
+    // This calculates `n` by products.
+    // It consumes this object, since we should really either be working in a field with `n` being carried around, or be working directly on the factors, but not flipping between them.
+    pub fn factorisation(self) -> Factorisation {
+        Factorisation {
+            n: self.iter().map(Factor::calculate).product(),
+            factors: self
+        }
     }
-
-    pub fn n(&self) -> u64 { self.n }
 
     // The count of divisors can be calulated efficiently from the prime powers.
     // For each prime in the prime factors with a power of p, it can contribute p+1 modulo families of divisors.
     // Therefore, the total number of divisors a number has is the product of p+1 for each prime factor power.
     pub fn count_divisors(&self) -> u32 {
-        self.vec.iter().map(|f| f.power + 1).product::<u32>()
+        self.iter().map(|f| f.power + 1).product::<u32>()
     }
 
     // The sum of all divisors can be calculated efficiently from the primes and their powers.
@@ -68,22 +92,86 @@ impl Factors {
     //
     // We an further optimize this, since the sum of powers is a geometric sum, hence we can solve it analytically without looping.
     pub fn sum_divisors(&self) -> u64 {
-        self.vec.iter().map(Factor::power_sum).product()
+        self.iter().map(Factor::power_sum).product()
     }
 
-    // The proper divisors exclude thenumber itself.
-    pub fn sum_proper_divisors(&self) -> u64 {
-        self.sum_divisors() - self.n
+    // Iterate over two prime factorisations, returning the factors and their powers in each of the inputs, in order.
+    //
+    // For factors that appear in one or the other fatorisation but not both, the power in the absent one is 0.
+    pub fn factors_iterator<'a>(&'a self, other: &'a Self) -> impl 'a + Iterator<Item=(u64, (u32, u32))> {
+        let mut lhs = self.iter();
+        let mut rhs = other.iter();
+
+        let mut l_next = lhs.next();
+        let mut r_next = rhs.next();
+
+        std::iter::from_fn(move ||
+            match (l_next, r_next) {
+                (Some(l), Some(r)) => {
+                    if l.prime < r.prime {
+                        l_next = lhs.next();
+                        Some((l.prime, (l.power, 0)))
+                    } else if l.prime > r.prime {
+                        r_next = rhs.next();
+                        Some((r.prime, (0, r.power)))
+                    } else {
+                        l_next = lhs.next();
+                        r_next = rhs.next();
+                        Some((l.prime, (l.power, r.power)))
+                    }
+                }
+                (Some(l), None) => {
+                    l_next = lhs.next();
+                    Some((l.prime, (l.power, 0)))
+                }
+                (None, Some(r)) => {
+                    r_next = rhs.next();
+                    Some((r.prime, (0, r.power)))
+                }
+                (None, None) => None
+            }
+        )
     }
 
-    // Check if the number is perfect or not.
-    pub fn perfection(&self) -> Perfection {
-        match self.sum_proper_divisors().cmp(&self.n) {
-            Ordering::Less => Perfection::Deficient,
-            Ordering::Equal => Perfection::Perfect,
-            Ordering::Greater => Perfection::Abundant,
-        }
+    // The largest common factor of two numbers.
+    //
+    // If two numbers share a prime factor, then the largest common factor contains the smallest power.
+    // In the special case where a prime is a factor of one and not the other, it can not be part of the common factor.
+    // This is equivalent to filtering out all factors where the minimum power is zero.
+    pub fn largest_common_factor(&self, other: &Self) -> Self {
+        Factors(self.factors_iterator(other)
+            .map(|(pr, (l, r))| Factor { prime: pr, power: l.min(r) })
+            .filter(|&f| f.power != 0)
+            .collect()
+        )
     }
+
+    // The smallest common multiple of two numbers.
+    //
+    // For each prime factor of two numbers, the smallest common multiple is each prime factor raised to the largest power found in either one.
+    pub fn smallest_common_multiple(&self, other: &Self) -> Self {
+        Factors(self.factors_iterator(other)
+            .map(|(pr, (l, r))| Factor { prime: pr, power: l.max(r) })
+            .collect()
+        )
+    }
+}
+
+// Multiplication of prime factor representations.
+//
+// This is slightly odd, in that `Mul` is defined on references, but returns the raw type.
+impl std::ops::Mul for &Factors {
+    type Output = Factors;
+
+    // The product of two factorised numbers.
+    //
+    // The product can be trivially found by summing the powers of each factor.
+    fn mul(self, other: Self) -> Self::Output {
+        Factors(self.factors_iterator(other)
+            .map(|(pr, (l, r))| Factor { prime: pr, power: l+r })
+            .collect())
+    }
+
 }
 
 #[derive(PartialEq)]
@@ -119,6 +207,8 @@ impl Factor {
 }
 
 
+
+
 pub struct Primes(Vec<u64>);
 
 impl Primes {
@@ -126,29 +216,31 @@ impl Primes {
         PrimesIterator { ps: &mut self.0, state: PIState::I(0) }
     }
 
-    pub fn factorise<'a>(&'a mut self, n: u64) -> Factors {
+    pub fn factorise<'a>(&'a mut self, n: u64) -> Factorisation {
         let mut m = n;
         let mut ps = self.iter();
     
-        Factors {
+        Factorisation {
             n,
-            vec: std::iter::from_fn(move || {
-                loop {
-                    let pr = ps.next().unwrap();
-                    if pr > m { return None }
-                    let mut po = 0;
+            factors: Factors(
+                std::iter::from_fn(move || {
                     loop {
-                        if m % pr != 0 {
-                            break;
+                        let pr = ps.next().unwrap();
+                        if pr > m { return None }
+                        let mut po = 0;
+                        loop {
+                            if m % pr != 0 {
+                                break;
+                            }
+                            po += 1;
+                            m /= pr;
                         }
-                        po += 1;
-                        m /= pr;
+                        if po > 0 {
+                            return Some(Factor{ prime: pr, power: po })
+                        }
                     }
-                    if po > 0 {
-                        return Some(Factor{ prime: pr, power: po })
-                    }
-                }
-            }).collect()
+                }).collect()
+            )
         }
     }
 }
@@ -188,11 +280,12 @@ impl <'a> Iterator for PrimesIterator<'a> {
             }
             PIState::P(ref mut pi) => {
                 let mut i = *pi;
+                // we trade one square root op here vs needing to compute i*i repeatedly within the loop
                 let i_root = (i as f64).sqrt().ceil() as u64;
                 loop {
                     if self.ps.iter()
                         .take_while(|&&p| p <= i_root)
-                        .any(|&p| i % p == 0)
+                        .any(|&p| i % p == 0) // rely upon this short-circuting
                     {
                         i += 1;
                         continue;

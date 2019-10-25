@@ -1,7 +1,7 @@
 
 fn main() -> Result<(), std::io::Error> {
     let names_text = std::fs::read_to_string("data/p022_names.txt")?;
-    let mut names: Vec<String> = {
+    let names: Vec<String> = {
         let mut spl: Vec<String> = names_text.split(',').map(str::to_string).collect();
         spl.iter_mut().for_each(|s| String::retain(s, |c| c != '"'));
         spl.sort();

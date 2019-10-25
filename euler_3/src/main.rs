@@ -1,11 +1,11 @@
-use hypatia::numbers::{Primes, Factors};
+use hypatia::numbers::{Primes, Factorisation};
 
 fn main() {
     let num = 600_851_475_143u64;
 
-    let fs: Factors = Primes::default().factorise(num);
-    println!("factors of {} are {:#?}", num, fs.vec_ref());
-    println!("largest factor: {}", fs.vec_ref().last().unwrap().prime);
+    let fs: Factorisation = Primes::default().factorise(num);
+    println!("factors of {} are {:#?}", num, fs.factors);
+    println!("largest factor: {}", fs.factors.iter().last().unwrap().prime);
     // println!("largest prime factor of {} is {}", num, largest_prime_factor);
 }
 
