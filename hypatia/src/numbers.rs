@@ -4,6 +4,7 @@ pub fn triangular(n: u64) -> u64 {
     ((n * n) + n) / 2
 }
 
+// fixme: not sure this is correct - see the impl in decimal
 pub fn fib() -> impl Iterator<Item = u64> {
     let mut f0 = 0;
     let mut f1 = 1;

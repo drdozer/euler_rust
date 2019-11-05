@@ -1,5 +1,5 @@
 use std::ops::{Add, Mul};
-
+use std::rc::{Rc};
 
 #[derive(Debug)]
 pub struct Decimal {
@@ -27,7 +27,20 @@ impl Decimal {
 
     pub fn digits(&self) -> &[u8] {
         &self.digits[..]
-    } 
+    }
+
+    pub fn fib() -> impl Iterator<Item = Rc<Decimal>> {
+        let mut f0 = Rc::new(Decimal::from_u32(1));
+        let mut f1 = f0.clone();
+
+        std::iter::from_fn(move || {
+            let f = f0.clone();
+            f0 = f1.clone();
+            f1 = Rc::new(f.as_ref() + f0.as_ref());
+            
+            Some(f)
+        })
+    }
 }
 
 impl std::fmt::Display for Decimal {
@@ -88,6 +101,7 @@ impl Mul for &Decimal {
         Decimal { digits }
     }
 }
+
 
 #[allow(clippy::suspicious_arithmetic_impl)]
 impl Add for &Decimal {

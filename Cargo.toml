@@ -25,4 +25,5 @@ members = [
     "euler_22",
     "euler_23",
     "euler_24",
+    "euler_25",
 ]
